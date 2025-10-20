@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ALTO Interiorismo · Panel de Obra</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    /* --- Variables de Diseño y Reset --- */
+    :root {
+      --bg-dark: #0a0e14;
+      --bg-panel: #121822;
+      --bg-panel-hover: #1a2230;
+      --border-color: #222a3a;
+      --text-primary: #f0f4f8;
+      --text-secondary: #a0aec0;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --ok: #22c55e;
+      --client-delay: #ef4444;
+      --industrial-delay: #f97316;
+      --admin-delay: #eab308;
+      --unforeseen-delay: #64748b;
+      --font-main: 'Inter', sans-serif;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* --- Estructura Principal y Cabecera --- */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      animation: fadeInDown 0.6s ease-out;
+    }
+    .brand {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+    }
+    .project-title {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-align: right;
+    }
+    
+    /* --- Sección del Cronograma (Timeline) --- */
+    .card {
+      background-color: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      animation: fadeInUp 0.6s ease-out forwards;
+      opacity: 0;
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .info-btn {
+      background-color: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.2s ease;
+    }
+    .info-btn:hover {
+      background-color: var(--accent-blue);
+      color: white;
+      border-color: var(--accent-blue);
+      transform: scale(1.1);
+    }
+    .timeline-wrapper {
+      position: relative;
+      width: 100%;
+      height: 80px;
+      padding: 20px 0;
+    }
+    .timeline-bar {
+      width: 100%;
+      height: 24px;
+      background-color: #2d3748;
+      border-radius: 12px;
+      position: relative;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.2);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .timeline-segment {
+        height: 100%;
+        transition: transform 0.3s ease, opacity 0.3s ease;
+        opacity: 0.9;
+        animation: scaleIn 0.8s ease-out forwards;
+        transform-origin: left;
+        position: relative; /* For tooltip positioning */
+    }
+    .timeline-segment[data-delay-type]:hover {
+        cursor: pointer;
+        opacity: 1;
+        transform: scaleY(1.1);
+        z-index: 10;
+    }
+    @keyframes scaleIn {
+        from { transform: scaleX(0); }
+        to { transform: scaleX(1); }
+    }
+    .segment-tooltip {
+        visibility: hidden;
+        background-color: #1a202c;
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 8px;
+        position: absolute;
+        z-index: 1;
+        bottom: 120%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 0.8rem;
+        pointer-events: none;
+        white-space: nowrap;
+    }
+    .timeline-segment:hover .segment-tooltip {
+        visibility: visible;
+        opacity: 1;
+    }
+    
+    .timeline-markers {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+    .marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      /* width and background-color are removed to eliminate the line */
+      transform: translateX(-50%);
+    }
+    .marker span {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        /* background-color is removed for seamless integration */
+        padding: 2px 6px;
+        border-radius: 4px;
+        white-space: nowrap;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+    .marker.marker-top span {
+        top: -25px; /* Position text above the timeline wrapper */
+    }
+    .marker.marker-bottom span {
+        bottom: -25px; /* Position text below the timeline wrapper */
+    }
+
+    /* --- Leyenda del Cronograma --- */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    
+    /* --- Contenedor de Secciones Secundarias --- */
+    .secondary-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* --- Tabla de Actas y Visitas --- */
+    .table-wrapper {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      font-size: 0.875rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    th {
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      font-weight: 600;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+    tbody tr.event-row {
+      transition: background-color 0.2s ease;
+      cursor: pointer;
+    }
+    tbody tr.event-row:hover {
+      background-color: var(--bg-panel-hover);
+    }
+    tbody tr.event-row.active {
+      background-color: var(--bg-panel-hover);
+    }
+    .view-btn {
+        background-color: var(--bg-panel);
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    .view-btn:hover {
+        background-color: var(--accent-blue);
+        color: white;
+    }
+    tr.details-row {
+        display: none;
+    }
+    tr.details-row.show {
+        display: table-row;
+    }
+    .details-cell {
+        padding: 0;
+    }
+    .details-content {
+        background-color: var(--bg-dark);
+        padding: 1.5rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        animation: fadeIn 0.4s ease;
+    }
+    .details-content h4 {
+        font-size: 1rem;
+        color: var(--text-primary);
+        margin-bottom: 0.75rem;
+    }
+    .details-content ul {
+        list-style-type: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+    .details-content ul li strong {
+        color: var(--text-primary);
+    }
+    .impact-chart-container {
+        width: 100%;
+        background-color: var(--bg-panel);
+        border-radius: 8px;
+        padding: 0.5rem;
+    }
+    .impact-bar {
+        height: 24px;
+        line-height: 24px;
+        color: white;
+        text-align: right;
+        padding-right: 8px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        transition: width 0.5s ease-out;
+    }
+
+    .status-pill {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    
+    @keyframes highlight-fade {
+        from { background-color: rgba(59, 130, 246, 0.4); }
+        to { background-color: transparent; }
+    }
+    tr.highlight {
+        animation: highlight-fade 2.5s ease-out forwards;
+    }
+
+    /* --- Estilos de Estado y Demoras --- */
+    .bg-ok { background-color: var(--ok); }
+    .bg-client-delay { background-color: var(--client-delay); }
+    .bg-industrial-delay { background-color: var(--industrial-delay); }
+    .bg-admin-delay { background-color: var(--admin-delay); }
+    .bg-unforeseen-delay { background-color: var(--unforeseen-delay); }
+    
+    .status-ok { background-color: rgba(34, 197, 94, 0.15); color: #6ee7b7; }
+    .status-client-delay { background-color: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+    .status-industrial-delay { background-color: rgba(249, 115, 22, 0.15); color: #fdba74; }
+    .status-admin-delay { background-color: rgba(234, 179, 8, 0.15); color: #fde047; }
+    .status-unforeseen-delay { background-color: rgba(100, 116, 139, 0.15); color: #cbd5e1; }
+
+    /* --- Modal Genérico --- */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.7);
+      animation: fadeIn 0.3s ease;
+    }
+    .modal-content {
+      background-color: var(--bg-panel);
+      margin: 5% auto;
+      padding: 2rem;
+      border: 1px solid var(--border-color);
+      border-radius: 1rem;
+      width: 90%;
+      max-width: 600px;
+      position: relative;
+      animation: slideInUp 0.4s ease-out;
+    }
+    .modal-close {
+      color: var(--text-secondary);
+      position: absolute;
+      top: 1rem;
+      right: 1.5rem;
+      font-size: 2rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .modal-close:hover { color: var(--text-primary); }
+    .modal-title { font-size: 1.5rem; margin-bottom: 1rem; }
+    .modal-body { font-size: 1rem; color: var(--text-secondary); line-height: 1.6; }
+    .modal-body ul { list-style-position: inside; padding-left: 1rem; }
+    
+    /* --- Animaciones --- */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeInUp { from { transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideInUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    /* --- Diseño Responsivo --- */
+    @media (max-width: 1024px) {
+      .secondary-grid {
+        grid-template-columns: 1fr;
+      }
+      .details-content {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem 0.5rem;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+      }
+      .brand {
+        font-size: 1.25rem;
+      }
+      .project-title {
+        text-align: left;
+        font-size: 0.9rem;
+      }
+      .card {
+        padding: 1rem;
+      }
+      .card-title {
+        font-size: 1.1rem;
+      }
+      .timeline-wrapper {
+        height: 70px;
+      }
+      .marker.marker-top span {
+        top: -20px;
+      }
+      .marker.marker-bottom span {
+        bottom: -20px;
+      }
+      .legend {
+        gap: 0.5rem 1rem;
+        margin-top: 1rem;
+      }
+      .legend-item {
+        font-size: 0.75rem;
+      }
+      th, td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+        white-space: nowrap;
+      }
+      td:nth-child(2) {
+        white-space: normal;
+      }
+      .view-btn {
+        padding: 0.5rem 0.9rem;
+      }
+      .details-content {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        padding: 1rem;
+      }
+      .modal-content {
+        padding: 1.5rem;
+        margin: 10% auto;
+      }
+      .marker span { font-size: 0.7rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="brand"><a href="https://www.co-arquitectura.com/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">CO-Arquitectura</a></div>
+      <div class="project-title">Reforma de: La Obra Mas Chupiguay que nos han solicitado</div>
+    </header>
+
+    <main>
+      <!-- Cronograma Principal -->
+      <section id="timeline-card" class="card" style="animation-delay: 0.1s;">
+        <div class="card-header">
+          <h2 class="card-title">Cronograma Interactivo de Obra</h2>
+          <button class="info-btn" data-modal="info-timeline">i</button>
+        </div>
+        <div class="timeline-wrapper">
+          <div id="timeline-bar" class="timeline-bar"></div>
+          <div id="timeline-markers" class="timeline-markers"></div>
+        </div>
+        <div class="legend" id="timeline-legend"></div>
+      </section>
+
+      <!-- Secciones Secundarias -->
+      <div class="secondary-grid">
+        <!-- Actas y Visitas -->
+        <section id="actas-card" class="card" style="animation-delay: 0.2s;">
+          <div class="card-header">
+            <h2 class="card-title">Actas y Visitas de Obra</h2>
+            <button class="info-btn" data-modal="info-actas">i</button>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Incidente</th>
+                  <th>Estado</th>
+                  <th>Impacto</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="actas-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Análisis de Demoras -->
+        <section id="demoras-card" class="card" style="animation-delay: 0.3s;">
+          <div class="card-header">
+            <h2 class="card-title">Análisis de Demoras</h2>
+            <button class="info-btn" data-modal="info-demoras">i</button>
+          </div>
+          <canvas id="delaysChart"></canvas>
+          <div id="delay-summary" style="margin-top: 1.5rem; text-align: center; font-size: 1rem;"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modales de Información -->
+  <div id="info-timeline" class="modal">
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <h3 class="modal-title">Información del Cronograma</h3>
+      <div class="modal-body">
+        <p>Este cronograma animado muestra la vida del proyecto. La barra está coloreada en segmentos que representan el estado de la obra en cada momento.</p>
+        <ul>
+            <li><strong>Sección Verde:</strong> Representa el tiempo total planificado para la obra.</li>
+            <li><strong>Sección de Demoras:</strong> A continuación de la sección verde, muestra la suma de todas las demoras, dividida por colores.</li>
+            <li><strong>Interactividad:</strong> Haz clic en cualquier segmento de color en la zona de demoras. La tabla de abajo se desplazará y resaltará todos los incidentes que contribuyeron a esa demora.</li>
+            <li><strong>Marcadores de fecha:</strong> Indican los hitos clave del proyecto y no tapan la línea de tiempo.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div id="info-actas" class="modal">
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <h3 class="modal-title">Información de Actas y Visitas</h3>
+      <div class="modal-body">
+        <p>Aquí se listan todos los incidentes que nutren al cronograma. Haz clic en "VER" para desplegar los detalles de cada uno.</p>
+        <ul>
+          <li><strong>Incidente:</strong> Un resumen del evento.</li>
+          <li><strong>Estado:</strong> Clasifica el evento (ej. Demora del cliente, En plazo, etc.).</li>
+          <li><strong>Impacto:</strong> Muestra los días de retraso que este evento ha causado en la fecha final de entrega.</li>
+          <li><strong>Acción:</strong> Despliega una vista con todos los detalles del incidente.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div id="info-demoras" class="modal">
+    <div class="modal-content">
+      <span class="modal-close">&times;</span>
+      <h3 class="modal-title">Información del Análisis de Demoras</h3>
+      <div class="modal-body">
+        <p>Este gráfico de donut desglosa el origen de todas las demoras acumuladas en el proyecto. Permite identificar rápidamente quién o qué está causando el mayor impacto en el plazo de entrega.</p>
+        <ul>
+          <li><strong>Eje X / Y:</strong> No aplica. Es un gráfico de proporciones. Cada "quesito" representa el porcentaje de la demora total que corresponde a una categoría.</li>
+          <li><strong>Leyenda:</strong> Explica a qué corresponde cada color (Cliente, Industrial, Ayuntamiento, Imprevistos).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+      // --- BASE DE DATOS SIMULADA ---
+      const projectData = {
+        startPlan: '2025-05-01',
+        deadlinePlan: '2025-09-15',
+        events: [
+          { date: '2025-05-02', title: 'Inicio de obra y replanteo', type: 'ok', impact: 0, responsible: 'Equipo', description: 'Comienzan los trabajos según lo planificado. El replanteo inicial es correcto.' },
+          { date: '2025-05-15', title: 'Cliente solicita cambio de distribución en baño', type: 'client-delay', impact: 7, responsible: 'Cliente', description: 'Se solicita un cambio no contemplado en la distribución del baño principal. Requiere modificar fontanería y planos. El cliente acepta la demora.' },
+          { date: '2025-06-05', title: 'Retraso en entrega de azulejos', type: 'industrial-delay', impact: 10, responsible: 'Proveedor A', description: 'El proveedor de los azulejos para la cocina comunica un retraso en la producción. Se buscan alternativas.' },
+          { date: '2025-06-20', title: 'Permiso de obra menor concedido', type: 'ok', impact: 0, responsible: 'Ayuntamiento', description: 'El ayuntamiento concede el permiso para la modificación de la terraza sin demoras sobre la previsión.' },
+          { date: '2025-07-01', title: 'Aparición de humedades imprevistas', type: 'unforeseen-delay', impact: 12, responsible: 'Imprevisto', description: 'Al demoler un tabique, se detectan humedades por capilaridad no visibles en el estudio inicial. Se requiere tratamiento específico.' },
+          { date: '2025-07-18', title: 'Ayuntamiento solicita documentación adicional', type: 'admin-delay', impact: 5, responsible: 'Ayuntamiento', description: 'La administración local requiere un anexo técnico sobre la estructura del balcón, paralizando el trabajo en esa zona.' },
+          { date: '2025-08-04', title: 'Cliente elige un nuevo modelo de parquet', type: 'client-delay', impact: 15, responsible: 'Cliente', description: 'El cliente decide cambiar el tipo de parquet por uno de importación con un plazo de entrega superior. Se le informa y acepta el impacto en la fecha final.' },
+          { date: '2025-08-20', title: 'El equipo de climatización finaliza instalación', type: 'ok', impact: 0, responsible: 'Industrial B', description: 'La instalación del sistema de aire acondicionado por conductos se completa dos días antes de lo previsto.' },
+          { date: '2025-09-05', title: 'Pintor sufre un accidente leve', type: 'industrial-delay', impact: 4, responsible: 'Pintor', description: 'El pintor principal sufre una lesión menor que le obliga a una baja de 4 días, retrasando los acabados finales.' },
+          { date: '2025-09-25', title: 'Revisión final de instalaciones', type: 'ok', impact: 0, responsible: 'Equipo', description: 'Se completan con éxito todas las pruebas de electricidad, fontanería y gas.' },
+          { date: '2025-10-10', title: 'Error en medidas de la encimera', type: 'industrial-delay', impact: 8, responsible: 'Marmolista', description: 'La pieza de mármol para la encimera llega con medidas incorrectas y debe ser fabricada de nuevo.' },
+        ]
+      };
+
+      // --- CONFIGURACIÓN Y UTILIDADES ---
+      const typeConfig = {
+        'ok': { label: 'En Plazo', color: 'var(--ok)', class: 'status-ok', bgColor: 'var(--ok)' },
+        'client-delay': { label: 'Demora Cliente', color: 'var(--client-delay)', class: 'status-client-delay', bgColor: 'var(--client-delay)' },
+        'industrial-delay': { label: 'Demora Industrial', color: 'var(--industrial-delay)', class: 'status-industrial-delay', bgColor: 'var(--industrial-delay)' },
+        'admin-delay': { label: 'Demora Admin.', color: 'var(--admin-delay)', class: 'status-admin-delay', bgColor: 'var(--admin-delay)' },
+        'unforeseen-delay': { label: 'Imprevisto', color: 'var(--unforeseen-delay)', class: 'status-unforeseen-delay', bgColor: 'var(--unforeseen-delay)' }
+      };
+
+      const daysBetween = (date1, date2) => (new Date(date2) - new Date(date1)) / (1000 * 3600 * 24);
+      const formatDate = (date) => new Date(date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const addDays = (date, days) => {
+          const result = new Date(date);
+          result.setDate(result.getDate() + days);
+          return result;
+      };
+
+      // --- CÁLCULOS PRINCIPALES ---
+      const totalPlannedDays = daysBetween(projectData.startPlan, projectData.deadlinePlan);
+      const totalDelay = projectData.events.reduce((acc, event) => acc + event.impact, 0);
+      const realDeadline = addDays(projectData.deadlinePlan, totalDelay);
+      const totalProjectDuration = daysBetween(projectData.startPlan, realDeadline);
+
+      // --- RENDERIZADO DEL CRONOGRAMA ---
+      function renderTimeline() {
+          const timelineBar = document.getElementById('timeline-bar');
+          const timelineMarkers = document.getElementById('timeline-markers');
+          timelineBar.innerHTML = '';
+          timelineMarkers.innerHTML = '';
+          
+          // 1. Segmento "En Plazo"
+          const onTimeTooltip = `Periodo Planificado (${totalPlannedDays.toFixed(0)} días)`;
+          createSegment(timelineBar, totalPlannedDays, 'ok', onTimeTooltip);
+
+          // 2. Segmentos de "Demora"
+          const delayByType = projectData.events.reduce((acc, event) => {
+              if (event.impact > 0) {
+                  acc[event.type] = (acc[event.type] || 0) + event.impact;
+              }
+              return acc;
+          }, {});
+
+          Object.keys(delayByType).forEach(type => {
+              const days = delayByType[type];
+              const config = typeConfig[type];
+              const delayTooltip = `${config.label}: ${days} días de impacto total`;
+              createSegment(timelineBar, days, type, delayTooltip, type);
+          });
+          
+          // 3. Renderizar marcadores de fecha
+          const markers = [
+              { date: projectData.startPlan, label: `Inicio: ${formatDate(projectData.startPlan)}`, pos: 'top' },
+              { date: projectData.deadlinePlan, label: `Fin Planificado`, pos: 'top' },
+              { date: realDeadline, label: `Fin Real: ${formatDate(realDeadline)}`, pos: 'bottom' }
+          ];
+
+          markers.forEach(marker => {
+              const daysFromStart = daysBetween(projectData.startPlan, marker.date);
+              const position = (daysFromStart / totalProjectDuration) * 100;
+              createMarker(timelineMarkers, position, marker.label, marker.pos);
+          });
+      }
+
+      function createSegment(container, days, type, tooltipText, delayType = null) {
+          const width = (days / totalProjectDuration) * 100;
+          const segment = document.createElement('div');
+          segment.className = 'timeline-segment';
+          segment.style.width = `${width}%`;
+          segment.style.backgroundColor = typeConfig[type].color;
+          segment.style.animationDelay = `${container.children.length * 50}ms`;
+
+          if (delayType) {
+            segment.dataset.delayType = delayType;
+          }
+
+          const tooltip = document.createElement('div');
+          tooltip.className = 'segment-tooltip';
+          tooltip.textContent = tooltipText;
+          segment.appendChild(tooltip);
+
+          container.appendChild(segment);
+      }
+
+      function createMarker(container, position, label, verticalPos) {
+          const markerEl = document.createElement('div');
+          markerEl.className = `marker marker-${verticalPos}`;
+          markerEl.style.left = `${position}%`;
+          markerEl.innerHTML = `<span>${label}</span>`;
+          container.appendChild(markerEl);
+      }
+
+      // --- RENDERIZADO DE TABLA DE ACTAS ---
+      function renderActasTable() {
+          const actasTableBody = document.getElementById('actas-table-body');
+          actasTableBody.innerHTML = '';
+          projectData.events.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(event => {
+              const eventRow = document.createElement('tr');
+              eventRow.className = 'event-row';
+              eventRow.dataset.eventType = event.type;
+              eventRow.innerHTML = `
+                  <td>${formatDate(event.date)}</td>
+                  <td>${event.title}</td>
+                  <td><span class="status-pill ${typeConfig[event.type].class}">${typeConfig[event.type].label}</span></td>
+                  <td>${event.impact > 0 ? `${event.impact} días` : '—'}</td>
+                  <td><button class="view-btn">VER</button></td>
+              `;
+              
+              const detailsRow = document.createElement('tr');
+              detailsRow.className = 'details-row';
+              const maxImpact = Math.max(...projectData.events.map(e => e.impact), 1);
+              const barWidth = event.impact > 0 ? (event.impact / maxImpact) * 100 : 0;
+              
+              detailsRow.innerHTML = `
+                  <td colspan="5" class="details-cell">
+                      <div class="details-content">
+                          <div>
+                              <h4>Detalles del Incidente</h4>
+                              <ul>
+                                  <li><strong>Descripción:</strong> ${event.description}</li>
+                                  <li><strong>Responsable:</strong> ${event.responsible}</li>
+                              </ul>
+                          </div>
+                          <div>
+                              <h4>Impacto Visual en Plazo</h4>
+                              <div class="impact-chart-container">
+                                <div class="impact-bar" style="width: 0%; background-color:${typeConfig[event.type].bgColor};" data-width="${barWidth}">
+                                      ${event.impact > 0 ? `${event.impact} días` : 'Sin impacto'}
+                                </div>
+                              </div>
+                          </div>
+                      </div>
+                  </td>
+              `;
+
+              actasTableBody.appendChild(eventRow);
+              actasTableBody.appendChild(detailsRow);
+          });
+      }
+
+      // --- LÓGICA DE LA TABLA EXPANDIBLE ---
+      const actasTableBody = document.getElementById('actas-table-body');
+      actasTableBody.addEventListener('click', function(e) {
+          const eventRow = e.target.closest('.event-row');
+          if (!eventRow) return;
+          toggleTableRow(eventRow);
+      });
+      
+      function toggleTableRow(eventRow, forceOpen = false) {
+          if (!eventRow) return;
+          const btn = eventRow.querySelector('.view-btn');
+          const detailsRow = eventRow.nextElementSibling;
+          const isActive = eventRow.classList.contains('active');
+
+          if(forceOpen && isActive) return;
+
+          actasTableBody.querySelectorAll('.event-row.active').forEach(row => {
+              if (row !== eventRow) {
+                  row.classList.remove('active');
+                  row.nextElementSibling.classList.remove('show');
+                  row.querySelector('.view-btn').textContent = 'VER';
+              }
+          });
+          
+          const shouldBeActive = forceOpen || !isActive;
+          eventRow.classList.toggle('active', shouldBeActive);
+          detailsRow.classList.toggle('show', shouldBeActive);
+          btn.textContent = shouldBeActive ? 'OCULTAR' : 'VER';
+          
+          const bar = detailsRow.querySelector('.impact-bar');
+          if (shouldBeActive) {
+              setTimeout(() => { bar.style.width = bar.dataset.width + '%'; }, 50);
+          } else {
+              bar.style.width = '0%';
+          }
+      }
+
+      // --- CLICK EN TIMELINE ---
+      document.getElementById('timeline-bar').addEventListener('click', (e) => {
+          const segment = e.target.closest('.timeline-segment');
+          if (segment && segment.dataset.delayType) {
+              const delayType = segment.dataset.delayType;
+              const targetRows = actasTableBody.querySelectorAll(`tr.event-row[data-event-type="${delayType}"]`);
+              if (targetRows.length > 0) {
+                  targetRows.forEach(row => {
+                      row.classList.add('highlight');
+                      setTimeout(() => row.classList.remove('highlight'), 2500);
+                  });
+                  targetRows[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+          }
+      });
+      
+      // --- RENDERIZADO DEL GRÁFICO DE DEMORAS ---
+      let delayChartInstance = null;
+      function renderDelayChart() {
+          const canvas = document.getElementById('delaysChart');
+          if (!canvas) return;
+
+          const delayData = projectData.events.reduce((acc, event) => {
+              if (event.impact > 0) {
+                  acc[event.type] = (acc[event.type] || 0) + event.impact;
+              }
+              return acc;
+          }, {});
+
+          const chartLabels = Object.keys(delayData).map(key => typeConfig[key].label);
+          const chartValues = Object.values(delayData);
+          
+          const rootStyles = getComputedStyle(document.documentElement);
+          const chartColors = Object.keys(delayData).map(key => rootStyles.getPropertyValue(typeConfig[key].color.replace('var(', '').replace(')', '')).trim());
+          const bgColorPanel = rootStyles.getPropertyValue('--bg-panel').trim();
+          const textColorSecondary = rootStyles.getPropertyValue('--text-secondary').trim();
+
+          const chartConfig = {
+              type: 'doughnut',
+              data: {
+                  labels: chartLabels,
+                  datasets: [{
+                      data: chartValues,
+                      backgroundColor: chartColors,
+                      borderColor: bgColorPanel,
+                      borderWidth: 4,
+                      hoverOffset: 20
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  animation: {
+                      duration: 1200,
+                      easing: 'easeOutBack'
+                  },
+                  plugins: {
+                      legend: { 
+                          position: 'bottom', 
+                          labels: { 
+                              color: textColorSecondary, 
+                              font: { size: 12 } 
+                          } 
+                      },
+                      tooltip: {
+                          callbacks: {
+                              label: context => `${context.label || ''}: ${context.parsed || 0} días`
+                          }
+                      }
+                  }
+              }
+          };
+
+          const observer = new IntersectionObserver((entries) => {
+              entries.forEach(entry => {
+                  if (entry.isIntersecting) {
+                      if (delayChartInstance) delayChartInstance.destroy();
+                      delayChartInstance = new Chart(canvas, chartConfig);
+                      observer.unobserve(canvas); // Animate only once
+                  }
+              });
+          }, { threshold: 0.5 });
+
+          observer.observe(canvas);
+          document.getElementById('delay-summary').innerHTML = `Demora total acumulada: <strong>${totalDelay} días</strong>`;
+      }
+      
+      // --- FUNCIONALIDAD DE MODALES ---
+      function setupModals() {
+          document.querySelectorAll('.info-btn').forEach(button => {
+              button.addEventListener('click', () => {
+                  document.getElementById(button.dataset.modal).style.display = 'block';
+              });
+          });
+
+          document.querySelectorAll('.modal').forEach(modal => {
+              modal.querySelector('.modal-close').addEventListener('click', () => {
+                  modal.style.display = 'none';
+              });
+              window.addEventListener('click', (event) => {
+                  if (event.target == modal) {
+                      modal.style.display = 'none';
+                  }
+              });
+          });
+      }
+      
+      // --- INICIALIZACIÓN ---
+      renderTimeline();
+      renderActasTable();
+      renderDelayChart();
+      setupModals();
+      
+      // Renderizar leyenda del cronograma
+      const legendContainer = document.getElementById('timeline-legend');
+      legendContainer.innerHTML = '';
+      Object.values(typeConfig).forEach(item => {
+          const legendItem = document.createElement('div');
+          legendItem.className = 'legend-item';
+          legendItem.innerHTML = `<div class="legend-dot" style="background-color: ${item.color};"></div><span>${item.label}</span>`;
+          legendContainer.appendChild(legendItem);
+      });
+    });
+  </script>
+</body>
+</html>
+
